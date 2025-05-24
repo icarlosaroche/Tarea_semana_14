@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Adivina el Pokémon</title>
+    <style>
+        body {
+            background-color: #f2f7ff;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #3d7dca;
+            margin-bottom: 20px;
+        }
+
+        #pokemon-image img {
+            width: 200px;
+            height: 200px;
+            filter: brightness(0);
+            transition: filter 0.3s ease;
+        }
+
+        input, button {
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: 2px solid #3d7dca;
+        }
+
+        input {
+            width: 250px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #ffcb05;
+            color: #000;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #message {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .hints {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .hint-card {
+            background-color: #ffffff;
+            border: 2px solid #3d7dca;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Adivina el Pokémon</h1>
+    <div id="pokemon-image"></div>
+    <input type="text" id="guess-input" placeholder="Escribe tu respuesta"/>
+    <button onclick="checkGuess()">Adivinar</button>
+    <p id="message"></p>
+
+    <div class="hints">
+        <div class="hint-card" id="hint"></div>
+        <div class="hint-card" id="hint2"></div>
+        <div class="hint-card" id="hint3"></div>
+        <div class="hint-card" id="hint4"></div>
+        <div class="hint-card" id="hint5"></div>
+        <div class="hint-card" id="hint6"></div>
+    </div>
+
+    <script>
+        let pokemonActual = {};
+        let intentos = 0;
+
+        window.onload = cargarPokemonAleatorio;
+
+        async function cargarPokemonAleatorio() {
+            document.getElementById('message').textContent = '';
+            document.getElementById('guess-input').value = '';
+            ['hint','hint2','hint3','hint4','hint5','hint6'].forEach(id => document.getElementById(id).textContent = '');
+            intentos = 0;
+
+            const pokemonId = Math.floor(Math.random() * 150) + 1;
+
+            try {
+                const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`);
+                const data = await res.json();
+
+                pokemonActual = {
+                    name: data.name,
+                    image: data.sprites.other['official-artwork'].front_default || data.sprites.front_default,
+                    types: data.types.map(t => t.type.name),
+                    height: data.height,
+                    ability: data.abilities[0]?.ability.name || 'desconocida'
+                };
+
+                document.getElementById('pokemon-image').innerHTML = `<img src="${pokemonActual.image}" />`;
+
+                // Pistas
+                document.getElementById('hint').textContent = `Tipo(s): ${pokemonActual.types.join(' / ')}`;
+                document.getElementById('hint2').textContent = `Primera letra: ${pokemonActual.name.charAt(0).toUpperCase()}`;
+                document.getElementById('hint3').textContent = `Última letra: ${pokemonActual.name.slice(-1).toUpperCase()}`;
+                document.getElementById('hint4').textContent = `Largo del nombre: ${pokemonActual.name.length} letras`;
+                document.getElementById('hint5').textContent = `Altura: ${(pokemonActual.height / 10).toFixed(1)} m`;
+                document.getElementById('hint6').textContent = `Habilidad: ${pokemonActual.ability}`;
+
+            } catch (error) {
+                document.getElementById('message').textContent = 'Error al cargar el Pokémon.';
+            }
+        }
+
+        function checkGuess() {
+            const guess = document.getElementById('guess-input').value.trim().toLowerCase();
+            const img = document.querySelector('#pokemon-image img');
+            const msg = document.getElementById('message');
+
+            if (!guess) {
+                msg.textContent = 'Escribe un nombre.';
+                return;
+            }
+
+            intentos++;
+
+            if (guess === pokemonActual.name) {
+                img.style.filter = 'brightness(1)';
+                msg.textContent = `¡Correcto! Era ${pokemonActual.name}.`;
+                setTimeout(cargarPokemonAleatorio, 3000);
+            } else if (intentos >= 5) {
+                img.style.filter = 'brightness(1)';
+                msg.textContent = `Perdiste. Era ${pokemonActual.name}.`;
+            } else {
+                msg.textContent = `Incorrecto. Intento ${intentos}/5`;
+                img.style.filter = `brightness(${intentos * 0.2})`;
+            }
+        }
+    </script>
+</body>
+</html>
