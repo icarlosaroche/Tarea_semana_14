@@ -57,7 +57,7 @@
             gap: 10px;
             margin-top: 20px;
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
         }
 
         .hint-card {
@@ -83,6 +83,7 @@
         <div class="hint-card" id="hint4"></div>
         <div class="hint-card" id="hint5"></div>
         <div class="hint-card" id="hint6"></div>
+        <div class="hint-card" id="hint7"></div>
     </div>
 
     <script>
@@ -94,7 +95,7 @@
         async function cargarPokemonAleatorio() {
             document.getElementById('message').textContent = '';
             document.getElementById('guess-input').value = '';
-            ['hint','hint2','hint3','hint4','hint5','hint6'].forEach(id => document.getElementById(id).textContent = '');
+            ['hint','hint2','hint3','hint4','hint5','hint6','hint7'].forEach(id => document.getElementById(id).textContent = '');
             intentos = 0;
 
             const pokemonId = Math.floor(Math.random() * 150) + 1;
@@ -103,12 +104,17 @@
                 const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`);
                 const data = await res.json();
 
+                const allMoves = data.moves.map(m => m.move.name);
+                const shuffled = allMoves.sort(() => 0.5 - Math.random());
+                const sampleMoves = shuffled.slice(0, 3).map(m => m.replace(/-/g, ' '));
+
                 pokemonActual = {
                     name: data.name,
                     image: data.sprites.other['official-artwork'].front_default || data.sprites.front_default,
                     types: data.types.map(t => t.type.name),
                     height: data.height,
-                    ability: data.abilities[0]?.ability.name || 'desconocida'
+                    ability: data.abilities[0]?.ability.name || 'desconocida',
+                    moves: sampleMoves
                 };
 
                 document.getElementById('pokemon-image').innerHTML = `<img src="${pokemonActual.image}" />`;
@@ -120,6 +126,7 @@
                 document.getElementById('hint4').textContent = `Largo del nombre: ${pokemonActual.name.length} letras`;
                 document.getElementById('hint5').textContent = `Altura: ${(pokemonActual.height / 10).toFixed(1)} m`;
                 document.getElementById('hint6').textContent = `Habilidad: ${pokemonActual.ability}`;
+                document.getElementById('hint7').textContent = `Movimientos: ${pokemonActual.moves.join(', ')}`;
 
             } catch (error) {
                 document.getElementById('message').textContent = 'Error al cargar el Pokémon.';
